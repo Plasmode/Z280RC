@@ -1,0 +1,32 @@
+Bill of materials -- project C:\ivexdata\Home-Proj\TinyZ280\Z280RC\Z280RC.sch --
+ page 1
+
+  Item     Qty  References			Value				Source
+---------------------------------------------------------------------------------------
+     1       9  R8,R9,R10,R11,R12,R13,
+			R14,R15,R25		100, 0805        
+     2       1  R33				330, 0805            
+     3       2  R6,R7				100, 0805  
+     4       1  D1				LED, T1  
+     5       2  R1,R4				4.7K, 0805            
+     6       1  P2				2X5 Header  
+     7       1  U1				Zilog Z8028012VSC		UTsource  
+     7A	     1	U1A				PLCC68SOCKET			jameco 71969 
+     8       7  C2,C3,C4,C5,C6,C7,C8		0.1uF, 1206  
+     9       1  C15				0.22F supercap			Panasonic EECSE0H224  
+    10       1  C14				100pF, 0805  
+    11       1  U6				24MHZ        Full can size  
+    12       1  Y1				32.768KHz 6fP watch crystal 3mm x8mm     
+    13       1  U4				DS1302        			Jameco 176778  
+    14       1  P4				IDE 44 pin CF adapter		eBay   
+    15       1  P3				2X5 Header  
+    16       1  U8				MCP130-460DI/TO   		jameco 1284957         
+    17       1  P1				40-pin right angle hdr  
+    18       2  C10,C11				10uF, 10V KEMET T 3.5x2.8mm  
+    19       1  U3				HY5118164CJC60T      		UTsource  
+    20       1  J1				Power Jack 2.1mm		jameco 101178  
+    21       3  R2,R3,R27			4.7K 8-pin SIP Bus		jameco 1970367
+    22       3  T3,T4,T5			1x2 Header
+    23       1  U2				EPM7128SQC100-10    		UTsource  
+    24       1  S1				push button SPST		jameco 149948
+    25	     1  T10-T15				1x6 Header right angle female 	eBay
