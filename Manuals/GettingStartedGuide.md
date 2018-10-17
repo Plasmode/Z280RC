@@ -2,21 +2,21 @@
 
 This is a quick start guide to get Z280RC power up and running.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_z280rc_connectors_copy.jpg
-Setup Hardware
+![](https://github.com/Plasmode/Z280RC/blob/master/Manuals/Z280RC_connector_pic.jpeg)
+## Setup Hardware
 
 Refer to picture above for location of various hardware features.
 
-    Z280RC needs a 5V power supply with maximum current of 400mA.
-    A TTL-level serial adapter with Transmit and Receive and ground signals. No handshake signals are required. The terminal program parameters are: 115200 baud, Odd parity, 8 data bit, 1 stop and no handshake.
-    To boot from the CF disk, be sure the mode jumper is inserted.
-    The included CF already has all the necessary software installed in track 0. CPM2.2 distribution files are on drive B, CPM3 distribution files are on drive A.
-    Refer to manual for software installation on a new CF
-    when power is applied, the expected current is 300mA-400mA
-    The signal assignment of the serial port is designed for the 6-pin CP2102 USB adapter below. Other USB adapter may also be used. Only three signals need to be connected: RxD, TxD and Ground.
+* Z280RC needs a 5V power supply with maximum current of 400mA.
+* A TTL-level serial adapter with Transmit and Receive and ground signals. No handshake signals are required. The terminal program parameters are: 115200 baud, Odd parity, 8 data bit, 1 stop and no handshake.
+* To boot from the CF disk, be sure the mode jumper is inserted.
+* The included CF already has all the necessary software installed in track 0. CPM2.2 distribution files are on drive B, CPM3 distribution files are on drive A.
+* Refer to manual for software installation on a new CF
+* when power is applied, the expected current is 300mA-400mA
+* The signal assignment of the serial port is designed for the 6-pin CP2102 USB adapter below. Other USB adapter may also be used. Only three signals need to be connected: RxD, TxD and Ground.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_36690608.jpg
-ZZMon
+![](https://github.com/Plasmode/Z280RC/blob/master/Manuals/CP2102_adapter.jpeg)
+## ZZMon
 
 When the board is powered up with the mode jumper installed and a properly programed CF inserted, the ZZMon power up sign on message will be displayed on the console:
 
