@@ -5,22 +5,23 @@ A CP/M-ready, Z280-based SBC for RC2014 bus
 Z280RC (Z280 for RC2014) is a single-board Z280 computer with I/O expansion connector compatible with RC2014 bus. It is derived from [TinyZ280](https://www.retrobrewcomputers.org/doku.php?id=builderpages:plasmo:tinyz280:final_step) but instead of the SIMM72 DRAM module, a 1megx16 DRAM is used. It also have an interface to the [RC2014](https://rc2014.co.uk/) backplane. The interface to RC2014 is limited to its I/O modules. This is because the higher order addresses of RC2014 bus, A8-A15, and Memory Request (nMREQ) control line are not connected. The reason is because Z280RC already have internal RAM and shadow boot ROM so external memory interface is unnecessary.
 
 ![main_photo](https://github.com/Plasmode/Z280RC/blob/master/z280RC_main_pic.jpeg)
+***
 ## Features
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_36660607_1.jpg
+![feature_photo](https://github.com/Plasmode/Z280RC/blob/master/z280RC_feature_pic.jpeg)
 
-    Z280 CPU running at 29.49MHz with bus speed of 7.37 MHz
-    2 megbyte of DRAM
-    RAM-only system, shadow ROM is stored in CF disk and loaded in RAM at power-on or reset
-    Bus-connected 16-bit-wide CF interface
-    RTC based on DS1302
-    Four 8-meg CF drives (A: to D:)
-    1.5-meg RAM drive (E:)
-    One internal UART at 115200 baud, odd parity, no handshake
-    bootstrap from CF disk to ZZMon, a simple monitor
-    CP/M 2.2
-    CP/M 3 non-banked
-    A standalone single-board computer with I/O expansion bus compatible with RC2014 I/O bus
+    * Z280 CPU running at 29.49MHz with bus speed of 7.37 MHz
+    * 2 megbyte of DRAM
+    * RAM-only system, shadow ROM is stored in CF disk and loaded in RAM at power-on or reset
+    * Bus-connected 16-bit-wide CF interface
+    * RTC based on DS1302
+    * Four 8-meg CF drives (A: to D:)
+    * 1.5-meg RAM drive (E:)
+    * One internal UART at 115200 baud, odd parity, no handshake
+    * bootstrap from CF disk to ZZMon, a simple monitor
+    * CP/M 2.2
+    * CP/M 3 non-banked
+    * A standalone single-board computer with I/O expansion bus compatible with RC2014 I/O bus
 
 ## Modes of Operation
 
