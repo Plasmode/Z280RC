@@ -3,10 +3,10 @@
 This is the design description of cold boot software out of a compact flash.
 
 The motivation is two folds. First is cost saving since a set of ROM is not required resulting in smaller pc board and fewer parts. Second is ease of programming that CF can easily reprogrammed in-situ.
-Introduction
+## Introduction
 
 This concept works the best for processor with 16-bit wide data bus because it matches with CF's native 16-bit data bus. At power up (or when reset button is pressed), a state machine (CFinit) holds the CPU in reset while configure the CF to read the boot sector (first sector of a CF disk). The boot sector contains a cold bootstrap code that copies a CF loader into memory and jump to it. After CF is configured to read the boot sector, the state machine also configure the memory map so memory location 0-0x1FF are mapped to the CF's data register where content of the boot sector will stream out with each CPU read. The state machine then negates CPU RESET and CPU begin fetch instruction starting from location 0. Because the CF data register is basically a 256 words deep FIFO that the cold bootstrap code must be written such that there are no looping. The state machine contains a register that can be cleared by software which will restore the memory map of 0-0x1FF to normal memory.
-CFinit State Machine
+## CFinit State Machine
 
 State Transition:
 
@@ -20,12 +20,11 @@ State Transition:
 * Read CF Status register bit 7 (BSY) & bit 3 (DRQ) until (BSY==0 AND DRQ==1)
 * Remap 0x0 - 0x1FF to CF Data register and Release RESET to Z280
 
-Memory Map Configuration
-Cold Bootstrap Code
+## Cold Bootstrap Code
 
 This is the code that will be in memory once cold bootstrap is done loading:
 
-'; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
+; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
 CFdata       equ 0C0h        ;CF data register
 CFerr        equ 0C2h        ;CF error reg
 CFsectcnt    equ 0C5h        ;CF sector count reg
@@ -63,6 +62,6 @@ readdrq:
 ;    inirw            ; reg HL and c are already setup at the top
      in a,(CFstat)    ; OUTJMP bug fix
      inc d
-     jp moresect'
+     jp moresect
 
 This is the cold bootstrap code that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
