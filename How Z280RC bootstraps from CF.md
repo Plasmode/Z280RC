@@ -24,7 +24,7 @@ State Transition:
 
 This is the code that will be in memory once cold bootstrap is done loading:
 
-'; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
+`; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
 CFdata       equ 0C0h        ;CF data register
 CFerr        equ 0C2h        ;CF error reg
 CFsectcnt    equ 0C5h        ;CF sector count reg
@@ -62,16 +62,6 @@ readdrq:
 ;    inirw            ; reg HL and c are already setup at the top
      in a,(CFstat)    ; OUTJMP bug fix
      inc d
-     jp moresect'
+     jp moresect`
 
 This is the cold bootstrap code that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
-
-    © 2018 GitHub, Inc.
-    Terms
-    Privacy
-    Security
-    Status
-    Help
-
-    Contact GitHub
-    Pricin
