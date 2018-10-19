@@ -2,7 +2,7 @@
 
 This is the design description of cold boot software out of a compact flash.
 
-The motivation is two folds. 
+The motivation are two folds: 
 1. First is cost saving since a set of ROM is not required resulting in smaller pc board and fewer parts. 
 2. Second is ease of programming that CF can easily reprogrammed in-situ.
 ## Introduction
