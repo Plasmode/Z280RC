@@ -71,9 +71,9 @@ Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC10
 
 ### Manual
 
-    [Getting Started](Manuals/GettingStartedGuide.md) Guide
-    [ZZMon](Manuals/ZZMon_manual.md) operating manual
-    Create a new CF disk for Z280RC
+* [Getting Started](Manuals/GettingStartedGuide.md) Guide
+* [ZZMon](Manuals/ZZMon_manual.md) operating manual
+* Create a new CF disk for Z280RC
 
 ### Reference
 
