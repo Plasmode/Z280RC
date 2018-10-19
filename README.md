@@ -4,7 +4,7 @@ A CP/M-ready, Z280-based SBC for RC2014 bus
 
 Z280RC (Z280 for RC2014) is a single-board Z280 computer with I/O expansion connector compatible with RC2014 bus. It is derived from [TinyZ280](https://www.retrobrewcomputers.org/doku.php?id=builderpages:plasmo:tinyz280:final_step) but instead of the SIMM72 DRAM module, a 1megx16 DRAM is used. It also have an interface to the [RC2014](https://rc2014.co.uk/) backplane. The interface to RC2014 is limited to its I/O modules. This is because the higher order addresses of RC2014 bus, A8-A15, and Memory Request (nMREQ) control line are not connected. The reason is because Z280RC already have internal RAM and shadow boot ROM so external memory interface is unnecessary.
 
-![main_photo](https://github.com/Plasmode/Z280RC/blob/master/z280RC_main_pic.jpeg)
+![main_photo](z280RC_main_pic.jpeg)
 ***
 ## Features
 
@@ -36,11 +36,11 @@ This is normal mode of operation. At powerup, the state machine in CPLD initiali
 
 1. Z280 executes the cold bootstrap code which copies a small CF loading program into memory and then jump into the CF loading program.
 
-2. The CF loading program loads the monitor, ZZMon, from CF disk into memory and jump to ZZMon. ZZMon will display a sign-on message and wait for user inputs. Refer to [ZZMon manual](manuals/zzmon_manual.md) for details.
+2. The CF loading program loads the monitor, ZZMon, from CF disk into memory and jump to ZZMon. ZZMon will display a sign-on message and wait for user inputs. Refer to [ZZMon manual](Manuals/ZZMon_manual.md) for details.
 
 Here is a more detailed description of the [CF bootstrap operation](How%20Z280RC%20bootstraps%20from%20CF.md).
 
-![](https://github.com/Plasmode/Z280RC/blob/master/z280RC_connector_pic.jpeg)
+![Z280RC Connectors](z280RC_connector_pic.jpeg)
 ## Design Files
 
 Z280RC schematic annotated with engineering changes
@@ -71,11 +71,9 @@ Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC10
 
 ### Manual
 
-    Getting Started Guide
-    ZZMon operating manual
-    Z280RC software build procedures ←(need update)
+    [Getting Started](Manuals/GettingStartedGuide.md) Guide
+    [ZZMon](Manuals/ZZMon_manual.md) operating manual
     Create a new CF disk for Z280RC
-    Create a new CF disk with correct byte ordering for Z280RC ← 10/2/2018 this is work in progress, files not ready for use
 
 ### Reference
 
