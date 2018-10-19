@@ -54,14 +54,14 @@ readbsy:
      and 80h          ; bsy flag is at bit 7
      jp nz,readbsy
 readdrq:
-     in a,(CFstat)    ; check data request bit set before read CF data
-     and 8            ; bit 3 is DRQ, wait for it to set
-     jp z,readdrq
-     ld b,0h          ; sector has 256 16-bit data
-     db 0edh,92h      ; op code for inirw input word and increment
-;    inirw            ; reg HL and c are already setup at the top
-     in a,(CFstat)    ; OUTJMP bug fix
-     inc d
-     jp moresect`
+`     in a,(CFstat)    ; check data request bit set before read CF data`
+`     and 8            ; bit 3 is DRQ, wait for it to set`
+`     jp z,readdrq`
+`     ld b,0h          ; sector has 256 16-bit data`
+`     db 0edh,92h      ; op code for inirw input word and increment`
+`;    inirw            ; reg HL and c are already setup at the top`
+`     in a,(CFstat)    ; OUTJMP bug fix`
+`     inc d`
+`     jp moresect`
 
 This is the cold bootstrap code that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
