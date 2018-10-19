@@ -2,7 +2,9 @@
 
 This is the design description of cold boot software out of a compact flash.
 
-The motivation is two folds. First is cost saving since a set of ROM is not required resulting in smaller pc board and fewer parts. Second is ease of programming that CF can easily reprogrammed in-situ.
+The motivation is two folds. 
+1. First is cost saving since a set of ROM is not required resulting in smaller pc board and fewer parts. 
+2. Second is ease of programming that CF can easily reprogrammed in-situ.
 ## Introduction
 
 This concept works the best for processor with 16-bit wide data bus because it matches with CF's native 16-bit data bus. At power up (or when reset button is pressed), a state machine (CFinit) holds the CPU in reset while configure the CF to read the boot sector (first sector of a CF disk). The boot sector contains a cold bootstrap code that copies a CF loader into memory and jump to it. After CF is configured to read the boot sector, the state machine also configure the memory map so memory location 0-0x1FF are mapped to the CF's data register where content of the boot sector will stream out with each CPU read. The state machine then negates CPU RESET and CPU begin fetch instruction starting from location 0. Because the CF data register is basically a 256 words deep FIFO that the cold bootstrap code must be written such that there are no looping. The state machine contains a register that can be cleared by software which will restore the memory map of 0-0x1FF to normal memory.
@@ -64,4 +66,4 @@ readdrq:
      inc d
      jp moresect
 ```
-This is the [cold bootstrap code](https://github.com/Plasmode/Z280RC/blob/master/SystemSoftware/CFMonLdr.asm)that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
+This is the [cold bootstrap code](https://github.com/Plasmode/Z280RC/blob/master/SystemSoftware/CFMonLdr.asm) that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
