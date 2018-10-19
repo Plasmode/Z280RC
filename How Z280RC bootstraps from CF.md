@@ -24,7 +24,7 @@ State Transition:
 
 This is the code that will be in memory once cold bootstrap is done loading:
 
-; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
+```; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
 CFdata       equ 0C0h        ;CF data register
 CFerr        equ 0C2h        ;CF error reg
 CFsectcnt    equ 0C5h        ;CF sector count reg
@@ -63,5 +63,5 @@ readdrq:
      in a,(CFstat)    ; OUTJMP bug fix
      inc d
      jp moresect
-
-This is the cold bootstrap code (https://github.com/Plasmode/Z280RC/blob/master/SystemSoftware/cfmonldr.zip) that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
+```
+This is the [cold bootstrap code](https://github.com/Plasmode/Z280RC/blob/master/SystemSoftware/CFMonLdr.asm)that executes the FIFO instruction stream from CF and creates the code above, byte-by-byte. It is strictly an in-line code with no looping and ends with a jump to the code just created.
