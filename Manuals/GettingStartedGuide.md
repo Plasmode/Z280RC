@@ -41,8 +41,8 @@ X <options> CR
 B <options> CR
 C <options> CR
 
->```
-
+>
+```
 Detailed description of ZZMon commands are in ZZMon manual.
 CP/M
 
