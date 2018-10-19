@@ -25,12 +25,12 @@ TinyZZ Monitor v0.8 3/25/18
 
 >
 ```
-
 ZZMon commands are single letter either upper case or lower case. Depending on the commands, the monitor software will prompt for additional actions.
 
 **H** gives short list of ZZMon commands:
 
-```>help
+```
+>help
 G <addr> CR
 R <track> <sector>
 D <start addr> <end addr>
@@ -51,16 +51,17 @@ To boot CP/M 2.2 type:
 
 **b2 (press enter to execute)**
 
-```Copyright 1979 © by Digital Research
+```
+Copyright 1979 © by Digital Research
 CP/M 2.2 for TinyZ280
 3/25/18 3.5 meg RAMDisk
 
 a>
 ```
-
 CP/M 2.2 distribution files are in drive B:
 
-```a>b:
+```
+a>b:
 b>dir
 B: ASM COM : BIOS ASM : CBIOS ASM : DDT COM
 B: DEBLOCK ASM : DISKDEF LIB : DUMP COM : DUMP ASM
@@ -68,12 +69,12 @@ B: ED COM : LOAD COM : MOVCPM COM : PIP COM
 B: STAT COM : SUBMIT COM : SYSGEN COM : XSUB COM
 b>
 ```
-
 To boot CP/M 3 (non banked), type:
 
 **b3 (press enter to execute)**
 
-```CP/M V3.0 Loader
+```
+CP/M V3.0 Loader
 Copyright (C) 1998, Caldera Inc.
 
 BIOS3 SPR E800 1000
@@ -97,7 +98,6 @@ A: SETDEF COM : SHOW COM : SID COM : SUBMIT COM : TRACE UTL
 A: TYPE COM : XMODEM COM : XREF COM
 A>
 ```
-
 CP/M3 distribution files are stored in drive A and another copy in drive C.
 RAM Drive
 
