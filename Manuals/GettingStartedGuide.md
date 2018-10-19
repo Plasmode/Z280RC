@@ -20,8 +20,8 @@ Refer to picture above for location of various hardware features.
 
 When the board is powered up with the mode jumper installed and a properly programed CF inserted, the ZZMon power up sign on message will be displayed on the console:
 
-
-```TinyZZ Monitor v0.8 3/25/18
+```
+TinyZZ Monitor v0.8 3/25/18
 
 >
 ```
