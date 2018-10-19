@@ -40,7 +40,7 @@ This is normal mode of operation. At powerup, the state machine in CPLD initiali
 
 Here is a more detailed description of the CF bootstrap operation.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_z280rc_connectors_copy.jpg
+![](https://github.com/Plasmode/Z280RC/blob/master/z280RC_connector_pic.jpeg)
 ## Design Files
 
 Z280RC schematic annotated with engineering changes
