@@ -26,7 +26,8 @@ State Transition:
 
 This is the code that will be in memory once cold bootstrap is done loading:
 
-```; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
+```
+; This is the CFMon program that'll be created in 0xC000 by the CFMonLdr
 CFdata       equ 0C0h        ;CF data register
 CFerr        equ 0C2h        ;CF error reg
 CFsectcnt    equ 0C5h        ;CF sector count reg
