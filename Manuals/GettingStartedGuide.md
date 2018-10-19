@@ -29,7 +29,7 @@ ZZMon commands are single letter either upper case or lower case. Depending on t
 
 H gives short list of ZZMon commands:
 
->help
+```>help
 G <addr> CR
 R <track> <sector>
 D <start addr> <end addr>
@@ -41,7 +41,7 @@ X <options> CR
 B <options> CR
 C <options> CR
 
->
+>```
 
 Detailed description of ZZMon commands are in ZZMon manual.
 CP/M
