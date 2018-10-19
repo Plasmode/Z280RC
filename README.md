@@ -21,7 +21,7 @@ Z280RC (Z280 for RC2014) is a single-board Z280 computer with I/O expansion conn
 * CP/M 3 non-banked
 * A standalone single-board computer with I/O expansion bus compatible with RC2014 I/O bus
 
-![feature_photo](https://github.com/Plasmode/Z280RC/blob/master/z280RC_feature_pic.jpeg)
+![feature_photo](z280RC_feature_pic.jpeg)
 ***
 
 ## Modes of Operation
@@ -36,9 +36,9 @@ This is normal mode of operation. At powerup, the state machine in CPLD initiali
 
 1. Z280 executes the cold bootstrap code which copies a small CF loading program into memory and then jump into the CF loading program.
 
-2. The CF loading program loads the monitor, ZZMon, from CF disk into memory and jump to ZZMon. ZZMon will display a sign-on message and wait for user inputs. Refer to ZZMon manual for details.
+2. The CF loading program loads the monitor, ZZMon, from CF disk into memory and jump to ZZMon. ZZMon will display a sign-on message and wait for user inputs. Refer to [ZZMon manual](manuals/zzmon_manual.md) for details.
 
-Here is a more detailed description of the [CF bootstrap operation](https://github.com/Plasmode/Z280RC/blob/master/How%20Z280RC%20bootstraps%20from%20CF.md).
+Here is a more detailed description of the [CF bootstrap operation](How%20Z280RC%20bootstraps%20from%20CF.md).
 
 ![](https://github.com/Plasmode/Z280RC/blob/master/z280RC_connector_pic.jpeg)
 ## Design Files
