@@ -1,0 +1,990 @@
+; 3/25/2018 Relocate the RAM disk from 0x80000-0x3FFFFF, 3.5meg
+; originally from LDRBIOS of cpm3on2 downloaded from cpm.z80.de
+; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CBIOS3, Copyright (C) 2018 Hui-chien Shen
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Z280 internal UART
+UARTconf	equ 0x10	; UART configuration reg
+RxData  	equ 0x16        ; on-chip UART receive register
+TxData  	equ 0x18        ; on-chip UART transmit register
+RxStat  	equ 0x14        ; on-chip UART transmitter status/control register
+TxStat  	equ 0x12        ; 0n-chip UART receiver status/control register
+; CF interface registers
+CFdata   	equ 0xC0    	;CF data register
+CFerr    	equ 0xC2    	;CF error reg
+CFsectcnt 	equ 0xC5    	;CF sector count reg
+CF07     	equ 0xC7   	;CF LA0-7
+CF815    	equ 0xC9      	;CF LA8-15
+CF1623   	equ 0xCB       	;CF LA16-23
+CF2427   	equ 0xCD       	;CF LA24-27
+CFstat   	equ 0xCF       	;CF status/command reg
+MMUctrl		equ 0xf0	; MMU master control reg
+MMUptr		equ 0xf1	; MMU page descriptor reg pointer
+MMUsel		equ 0xf5	; MMU descriptor select port
+MMUmove		equ 0xf4	; MMU block move port
+MMUinv		equ 0xf2	; MMU invalidation port
+DMActrl	equ 01fh		; DMA master control reg
+DMA0dstL	equ 0		; DMA chan 0 destination reg low
+DMA0dstH	equ 1		; DMA chan 0 destination reg high
+DMA0srcL	equ 2		; DMA chan 0 source reg low
+DMA0srcH	equ 3		; DMA chan 0 source reg high
+DMA0cnt	equ 4		; DMA chan 0 count reg
+DMA0td	equ 5		; DMA chan 0 transaction descriptor
+DMA1dstL	equ 8		; DMA chan 1 destination reg low
+DMA1dstH	equ 9		; DMA chan 1 destination reg high
+DMA1srcL	equ 0ah		; DMA chan 1 source reg low
+DMA1srcH	equ 0bh		; DMA chan 1 source reg high
+DMA1cnt	equ 0ch		; DMA chan 1 count reg
+DMA1td	equ 0dh		; DMA chan 1 transaction descriptor
+DMA2dstL	equ 10h		; DMA chan 2 destination reg low
+DMA2dstH	equ 11h		; DMA chan 2 destination reg high
+DMA2srcL	equ 12h		; DMA chan 2 source reg low
+DMA2srcH	equ 13h		; DMA chan 2 source reg high
+DMA2cnt	equ 14h		; DMA chan 2 count reg
+DMA2td	equ 15h		; DMA chan 2 transaction descriptor
+DMA3dstL	equ 18h		; DMA chan 3 destination reg low
+DMA3dstH	equ 19h		; DMA chan 3 destination reg high
+DMA3srcL	equ 1ah		; DMA chan 3 source reg low
+DMA3srcH	equ 1bh		; DMA chan 3 source reg high
+DMA3cnt	equ 1ch		; DMA chan 3 count reg
+DMA3td	equ 1dh		; DMA chan 3 transaction descriptor
+dffcb		equ 0x5C
+tpa		equ 0x100
+ccp		equ 0x100
+getch		equ	1
+print		equ	9
+open		equ	15
+readseq		equ	20
+dma		equ	26
+bdos		equ 5
+iobyte		equ 3
+cdisk		equ 4
+
+	CSEG
+; jump vector table used by CP/M
+        jp boot         ; cold start
+wboote: jp wboot        ; warm start
+        jp CONST	 ; console status
+        jp CONIN        ; console character in
+        jp conout       ; console character out
+        jp bad9         ; list character out
+        jp bad9         ; punch character out
+        jp bad9         ; reader character out
+        jp home         ; move disk head to home position
+        jp seldsk       ; select disk
+        jp seltrk       ; set track number
+        jp setsec       ; set sector number
+        jp setdma       ; set DMA address
+        jp read         ; read disk
+        jp write        ; write disk
+        jp bad9         ; return list status
+        jp sectran      ; sector translate
+        jp conost	; console output ready
+        jp bad4	    ; aux input is ready
+        jp bad4	    ; aux output is ready
+        jp bad4	    ; device table
+        jp bad4	    ; device init
+        jp drvtbl	; drive table (22)
+        jp multio 	; multi block I/O
+        jp flush	; flush data to disc
+        jp move	    ; block move (including banking)
+        jp time	    ; get current data and time into SCB
+        jp bad9	    ; select memory bank. Special: preserve regs
+        jp bad9	    ; set the bank for the next read/write sector
+        jp bad9	    ; set up for cross bank move
+        jp bad9	    ; extended BIOS
+        jp 0	    ; reserved
+        jp 0	    ; reserved
+; CP/M 3 style disk parameter header
+;  See section 3.3.2 of system guide
+dpbase0:
+            ; disk 0 (A)
+        dw 0            ; sector translation table (0 = no translation)
+	db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	db 0            ; Media flag
+        dw dpblk0        ; DPB (disk parameter block)
+        dw 0            ; CSV (unique scratch pad used to check for changed disks)
+        dw alv00        ; ALV (unique scratch pad for allocation information)
+;	dw dirbcb0	    ; Directory buffer control block
+;	dw dtabcb       ; DTAB CB
+	dw 0xFFFE		; dirbcb, let GENCPM figure it out
+	dw 0xFFFE		; dtabcb, let GENCPM figure it out
+        dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+        db 0            ; HASH bank
+        ; end of disk 0
+dpbase1:
+            ; disk 1 (B)
+        dw 0            ; sector translation table (0 = no translation)
+	db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	db 0            ; Media flag
+        dw dpblk1        ; DPB (disk parameter block)
+        dw 0            ; CSV (unique scratch pad used to check for changed disks)
+        dw alv01        ; ALV (unique scratch pad for allocation information)
+;	dw dirbcb1	    ; Directory buffer control block
+;	dw dtabcb       ; DTAB CB
+	dw 0xFFFE		;dirbcb, let GENCPM figure it out
+	dw 0xFFFE		;dtabcb, let GENCPM figure it out
+        dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+        db 0            ; HASH bank
+        ; end of disk 1
+dpbase2:
+            ; disk 2 (C)
+        dw 0            ; sector translation table (0 = no translation)
+	db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	db 0            ; Media flag
+        dw dpblk2        ; DPB (disk parameter block)
+        dw 0            ; CSV (unique scratch pad used to check for changed disks)
+        dw alv02        ; ALV (unique scratch pad for allocation information)
+;	dw dirbcb2	    ; Directory buffer control block
+;	dw dtabcb       ; DTAB CB
+	dw 0xFFFE		;dirbcb, let GENCPM figure it out
+	dw 0xFFFE		;dtabcb, let GENCPM figure it out
+        dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+        db 0            ; HASH bank
+        ; end of disk 2
+dpbase3:
+            ; disk 3 (D)
+        dw 0            ; sector translation table (0 = no translation)
+	db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	db 0            ; Media flag
+        dw dpblk3        ; DPB (disk parameter block)
+        dw 0            ; CSV (unique scratch pad used to check for changed disks)
+        dw alv03        ; ALV (unique scratch pad for allocation information)
+;	dw dirbcb3	    ; Directory buffer control block
+;	dw dtabcb       ; DTAB CB
+	dw 0xFFFE		;dirbcb, let GENCPM figure it out
+	dw 0xFFFE		;dtabcb, let GENCPM figure it out
+        dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+        db 0            ; HASH bank
+        ; end of disk 3
+dpbase4:
+            ; disk 4 (E)
+        dw 0            ; sector translation table (0 = no translation)
+	db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	db 0            ; Media flag
+        dw dpblk4        ; DPB (disk parameter block)
+        dw 0            ; CSV (unique scratch pad used to check for changed disks)
+        dw alv04        ; ALV (unique scratch pad for allocation information)
+;	dw dirbcb4	    ; Directory buffer control block
+;	dw dtabcb       ; DTAB CB
+	dw 0xFFFE		;dirbcb, let GENCPM figure it out
+	dw 0xFFFE		;dtabcb, let GENCPM figure it out
+        dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+        db 0            ; HASH bank
+        ; end of disk 4	
+ndisks      equ 5           ; number of disks we defined
+
+; disk parameter block (can be shared by all disks with same configuration)
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 62 tracks
+;  track offset of 1
+;  see section 3.3.3 of system guide
+dpblk0:
+	dw 1024		;sectors per track (SPT)
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 1983		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 1		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors
+	
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 63 tracks
+;  track offset of 64
+dpblk1:
+	dw 1024		;sectors per track (SPT)
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 2015		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 64		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 63 tracks
+;  track offset of 128	
+dpblk2:
+	dw 1024		;sectors per track (SPT)
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 2015		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 128		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 63 tracks
+;  track offset of 192	
+dpblk3:
+	dw 1024		;sectors per track (SPT)
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 2015		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 192		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors
+; RAM disk, BLS 4096, 1024 sector, 64 sectors per block, 64 tracks
+;  track offset of 0	
+dpblk4:
+	dw 1024		;sectors per track (SPT)
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 895		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 256		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors	
+drvtable:
+	dw dpbase0	; drive A
+	dw dpbase1	; drive B
+	dw dpbase2		; drive C
+	dw dpbase3		; drive D
+	dw dpbase4		; drive E
+	dw 0,0,0,0,0,0,0,0,0,0,0
+;	
+boot:
+	ld sp,0x100		; define stack for cold boot
+;	call MMUPage	; initialize MMU
+;	call initMMU	; 16 system page descriptor are valid and point to first 64K 
+	call UARTPage		; default page i/o reg is internal UART
+	ld a,0xE2		; initialize the UART configuration register
+	out (UARTconf),a
+	ld a,0x80		;enable UART transmit & receive 
+	out (TxStat),a
+	out (RxStat),a	
+	xor a			;clear reg A
+	ld (iobyte),a		; clear iobyte
+	ld (cdisk),a		; select disk A
+	ld hl,signon
+	call strout	;;; print sign on message
+wboot:	
+	ld sp,0x100		; define stack for warm boot 
+;
+;	initialize warm boot & BDOS jumps in page 0
+;
+	ld hl,wboote		;lxi	h,warmpt
+	ld (1),hl	;shld	bootram+1
+	ld hl,(@MXTPA)		;lhld	@mxtpa
+	ld (6),hl		;shld	bdos+1	;BDOS starting point
+	ld a,0xC3		;mvi	a,jmpop	; jump instruction (0xC3)
+	ld (0),a		;sta	bootram	;boot RAM location
+	ld (5),a		;sta	bdos	; BDOS location
+;
+;	load ccp.com into tpa
+;
+	ld b,36			;mvi	b,36
+	ld hl,dffcb		;lxi	h,dffcb
+	call	clear		;clear fcb area in low ram, 0x5C to 0x80
+	ld hl,dffcb		;lxi	h,dffcb
+	ld (hl),1		;mvi	m,1		;drive a:
+	inc hl			;inx	h
+	ld de,ccpstg		;lxi	d,ccpstg	;'ccp     com'
+	ld bc,11		;lxi	b,11		;length of a file name
+	call	move		;move filename to fcb
+	ld de,dffcb		;lxi	d,dffcb
+	ld c,open		;mvi	c,open
+	call	bdos		;open ccp.com, bdos equ 5
+	inc a			;x if return 0xFF, then file not found
+	jp z,operr		;jnz	operr		;if no error (
+	ld de,tpa		;lxi	d,tpa		;load into tpa
+;
+;	the load loop
+;
+ldloop:
+	push de			;push	d		;the current dma address
+	ld c,dma		;mvi	c,dma
+	call	bdos		;set dma for next 128 byte read, bdos equ 5
+	ld de,dffcb		;lxi	d,dffcb
+	ld c,readseq		;mvi	c,readseq
+	call	bdos		;read file data to tpa ram
+	or a			;ora	a		;test for complete
+	pop de			;pop	d		;restore dma address
+	jp nz,gocpm		;jnz	gocpm		;exit when past file end
+	ld hl,128		;lxi	h,128		;advance dma address 128 bytes
+	add hl,de		;dad	d
+	ex de,hl		;xchg
+	jp ldloop		;jmp	ldloop		;loop
+;
+gocpm:
+	cp 1			;cpi	1		;only legal exit = past end of file
+	jp nz,rderr		;jnz	rderr
+	jp ccp			;jmp	ccp		;now turn it loose
+;
+operr:
+;x	ld de,opnmsg		;lxi	d,opnmsg	;"BIOS can't open CCP.COM"
+;x	jp errs			;jmp	errs
+	ld hl,opnmsg		;x diagnostic  "BIOS can't open CCP.COM"
+	call strout		;x diagnostic
+	jp spin		;x diagnostic
+rderr:
+;x	ld de,errmsg		;lxi	d,errmsg	;"BIOS has bad sector in CCP.COM"
+	ld hl,errmsg		;x diagnostic  "BIOS has bad sector in CCP.COM"
+	call strout		;x diagnostic
+	jp spin		;x diagnostic
+errs:
+	ld c,print		;mvi	c,print
+	call	bdos		;print the complaint
+	ld c,getch		;mvi	c,getch
+	call	bdos		;wait for any key
+	jp wboot		;jmp	wboot		;try again and again
+
+; put out a BIOS failed number and spin forever
+bad4:	ld c,'4'
+	jp bad
+bad9:	ld c,'9'    
+bad:
+	call CONOUT		; put out whatever was in reg C
+        ld hl, failed
+        call strout
+spin:   jr spin
+;simple i/o handler
+;console status, return 0ffh if char ready
+CONST:
+	in a,(RxStat)	;;; read on-chip UART receiver status
+	and 10h		; data available?
+	ret z		; return with 0 if data not available
+	ld a,0ffh		; else data is available, return with 0ffh
+	ret
+
+CONIN:
+; console char into reg A
+	in a,(RxStat)	;;; read on-chip UART receiver status
+	and 10h		; data available?
+	jp z,CONIN
+	in a,(RxData)	; get it in Reg A
+;	and 7fh		; console input unfiltered
+	ret
+conout:     ; write character from C to console
+	in a,(TxStat)		; transmit empty?
+	and 1
+	jp z,CONOUT
+	ld a,c			; get char to accumulator
+	out (TxData),a		; put it out to internal Z280 UART
+	ret
+conost:
+auxist:
+auxost:
+	ld a,0ffh		; <-- is this correct?
+devini:
+	ret
+flush:
+multio:
+time:
+	xor a		;not implemented
+	ret
+
+seldsk:     ; select disk indicated by register C
+        ld hl, 0    ; return code 0 indicates error
+        ld a, c
+        cp ndisks
+        ret nc      ; return (with error code) if C >= ndisks ie illegal drive
+        ld (diskno), a ; store current disk
+	ld hl,dpbase0	; assuming disk A
+	cp 0
+	ret z
+	ld hl,dpbase1	; Is it disk B?
+	cp 1
+	ret z
+	ld hl,dpbase2	; Is it disk C?
+	cp 2
+	ret z
+	ld hl,dpbase3	; Is it disk D?
+	cp 3
+	ret z
+	ld hl,dpbase4	; must be disk E	    
+        ret
+
+home:       
+	    ld bc, 0
+            ; fall through into seltrk
+seltrk:     ; set track given by register BC
+;            ld a, c
+            ld (track),bc
+            ret
+
+setsec:     ; set sector given by register BC
+;            ld a, c
+            ld (sector),bc
+            ret
+
+sectran:    ; logical to physical sector translation
+            ; HL=BC ie 1:1 mapping (no translation)
+            ld h, b
+            ld l, c
+            ret
+
+setdma:     ; set DMA address given by BC
+	ld l,c
+	ld h,b
+            ld (dmaad), hl 
+            ret
+drvtbl:
+; no table, no hashing
+	ld hl,drvtable 	;drive table contain addresses of disk param header
+	ret
+move:
+; use ldir instruction to do block move
+	ex de,hl	;xchg
+	ldir
+	ex de,hl	;xchg
+	ret
+	    
+
+read:       
+; use native CF sector size of 512 bytes
+	ld a,(diskno)	; check if disk 4 (RAMdisk)
+	cp 4
+	jp z,RAMDISKr
+	push hl		;save reg
+	push bc
+;	call COUTdone	; wait for UART transmission done
+	call CFPage	; switch page i/o reg to CF ports
+; read specified CF sector directly into dma buffer
+	ld a,0x40		; set Logical Address addressing mode
+	out (CF2427),a
+	ld a,(sector)	;x since each track has 256 native sectors, don't need to do anything
+	out (CF07),a	; write LSB CF LA address
+	ld a,1		; read one sector
+	out (CFsectcnt),a	; write to sector count with 1
+	ld a,(track)	; get LSB track address
+	out (CF815),a	; write to CF LA register
+	ld a,(track+1)	; get MSB track address
+	out (CF1623),a	; write to CF LA register, MSB
+	ld a,0x20		; read CF sector command
+	out (CFstat),a	; issue the CF read sector comand
+	call readdrq	; check drq bit set before read CF data
+	ld hl,(dmaad)	;y go straight from CF data register to DMA address
+	ld c,CFdata	; reg C points to CF data reg
+	ld b,0		; sector has 256 16-bit data
+	db 0xed,0x92	; op code for inirw input word and increment
+;	inirw
+	call UARTPage	; restore the page i/o reg to UART
+	pop bc		; restore registers
+	pop hl
+	ld a,0		; return good read status
+	ret
+
+readdrq:
+	in a,(CFstat)	; check data request bit set before read CF data
+	and 8		; bit 3 is DRQ, wait for it to set
+	jp z,readdrq
+	ret
+; 3/25/18 RAM disk is relocate to 0x80000 to 0x3FFFFF
+; read RAM disk
+; starting address in RAM is 0x080000
+RAMDISKr:
+	push hl		; save reg
+	push de
+	push bc
+;*********************setup RAM Disk ****************************
+; calculate the absolute memory address
+;  calculate the MMU page descriptor value from sector & track value
+;  sector size is 0x200 bytes, each track is 0x20000.
+; page descriptor [d15..d0] is as follow:
+;   [d3..d0] are V/WP/C/M bits
+;   [d8..d4] are (sector) [d7..d3]
+;   [d15..d9] are (track) [d5..d0] plus base offset of 0x70 where RAMdisk starts in memory
+;                  track [d7..d6] are always 0
+; Use page 0xE000-0xEFFF to map to the RAMdisk
+; calculate a sector's base address within 0xE000-0xEFFF as follow:
+;   address [d15..d12] is 0xE
+;   address [d11..d9] is (sector) [d2..d0]
+;   address [d8..d0] is zero
+;
+;	ld a,(track)	; offset= track*0x20000
+;	add a,a		; shift left by one
+;	ld hl,(sector)	; get sector value
+;	srl h
+;	rr l		; reg L is A[15..8] of address offset
+;	add a,h		; reg A is A[23..16] of address offset
+;	add a,70h		; the RAMdisk starts from 0x700000
+;	ld h,a		; reg HL is now A[23..8] of the address offset
+;	ld a,l
+;	and 0f0h		; mask off low nibble
+;	or 8h		; V/WP/C/M bits are 1/0/0/0
+;	ld l,a		; HL contains 12-bit page descriptor plus attributes
+; manipulate HL so it will contain the 12-bit page descriptor plus 4-bit attributes
+
+;z calculate absolute address from track/sector values
+;z
+	ld a,(track)
+	ld h,a		; H is 0x08 + (track) [d5..d0] shifted left + (sector) d7
+	ld a,(sector)	; get sector value
+	sla a		; put most significant bit of sector into carry
+	rl h		; roll carry into reg H
+	or 0fh		; low nibble is 0xF
+	ld l,a
+	ld de,0800h	; base address of RAM disk in memory
+	add hl,de	; HL now contains 12-bit page descriptor plus attributes
+	push hl		;z save for later use
+;z use DMA instead of MMU
+	call DMAPage
+	ld c,DMActrl	; set up DMA master control
+	ld hl,0f0e0h	; software ready for dma0&1, no end-of-process, no links
+;	outw (c),hl	; write DMA master control reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA2cnt	; setup count of 512 byte
+	ld hl,512
+;	outw (c),hl	; write DMA2 count reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA2srcH	; source is RAMdisk
+	pop hl		; get the calcuated RAM disk physical address
+;	outw (c),hl	; write DMA2 source high reg
+	db 0edh,0bfh	; op code for OUTW (C),HL	
+	xor a		; clear reg A
+	ld l,a		; clear the lower half of HL reg
+	ld a,(sector)	; calculate address offset within the 4K page
+	and 7		; only interested in lowest 3 bits, the number of 512-byte sector
+	sla a		; derive the proper address
+	or 0f0h		; force high nibble to 0xF
+	ld h,a		; HL now point the address [A11..A0] in RAM disk	
+	ld c,DMA2srcL	; A11..A0 of source address
+;	outw (c),hl	; write DMA2 source low reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA2dstH	; destination is what's in dmaad
+	ld de,(dmaad)	; get the dmaad in reg de
+	ld h,0		; clear h register
+	ld a,0fh	; force lowest nibble of DMA2dstH to 0xF
+	or d
+	ld l,a		; A23..A16 is zero, A15..A12 is most significant nibble of dmaad		
+;z	ld l,d		; A23..A16 is zero, A15..A12 is most significant nibble of dmaad
+;	outw (c),hl	; write DMA2 destination high reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA2dstL	;
+	ld a,0f0h	; force high nibble of DMA2dstL to 0xFF
+	or d
+	ld h,a		; move the lower 12 bits of address to destination
+	ld l,e
+;	outw (c),hl	; write DMA2 destination low reg
+	db 0edh,0bfh	; op code for OUTW (C),HL	
+	ld hl,8080h	; enable DMA2, burst, byte size, flowthrough, no interrupt
+;			;  incrementing memory for source & destination
+	ld c,DMA2td	; setup DMA2 transaction descriptor reg
+;	outw (c),hl	; write DMA2 transaction description reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+;  DMA should start now
+
+
+;	ld a,(track)
+;	ld h,a		; H is 0x70 + (track) [d5..d0] shifted left + (sector) d7
+;	ld a,(sector)	; get sector value
+;	sla a		; put most significant bit of sector into carry
+;	rl h		; roll carry into reg H
+;	and 0fh		; mask off low nibble
+;	or 8		; V/WC/C/M are valid, no cache
+;	ld l,a
+;	ld de,7000h	; base address of RAM disk in memory
+;	add hl,de	; HL now contains 12-bit page descriptor plus attributes
+	
+;	call MMUPage	; set page I/O reg to MMU
+;	ld a,1eh		;x Use 0xE000-0xEFFF as window into high memory
+; write to system page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, system
+;	ld c,MMUsel	; write to MMU select port
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+; &&&&&&& do not use stack until MMU is restored &&&&&&&&&&&
+;	ld a,0eh		;x User 0xE000-0xEFFF as window into high memory
+; write to user page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, user
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+;	xor a		; clear reg A
+;	ld l,a		; clear the lower half of HL reg
+;	ld a,(sector)	; calculate address offset within the 4K page at location 0xE000-0xEFFF
+;	and 7		; only interested in lowest 3 bits, the number of 512-byte sector
+;	sla a		; derive the proper address offset within page 0xE000
+;	add a,0e0h	; base address is 0xE000
+;	ld h,a		; HL now point the desired sector in page 0xE000
+;***************** setup RAM DISK ***********************
+	
+;	ld de,(dmaad)	; copy data to DMA location
+;	ld bc,512		; copy 512 bytes
+;	ldir
+;	ld a,1eh		;x Use 0xE000-0xEFFF as window into high memory
+; write to system page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, system
+;	ld hl,0eah	;x logical = physical address, valid, cachable
+;	ld c,MMUsel	; write to MMU select port
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+;	ld a,0eh		;x User 0xE000-0xEFFF as window into high memory
+; write to user page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, user
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+; &&&&&&&&&&&&&&&&&&& OK to use stack after this &&&&&&&&&&&&&&&&&&&&&
+;	nop		; wait for a while before using stack
+;	nop
+	nop
+	nop
+	call UARTPage	; return page i/o reg to default value
+	
+	pop bc		;restore reg
+	pop de
+	pop hl
+	ld a,0		; return a OK status
+	ret
+; 3/25/18 relocate RAM disk to 0x80000-0x3FFFFF (3.5 meg) 	
+; write to RAMdisk
+; starting address in RAM is 0x080000
+RAMDISKw:
+	push hl		; save reg
+	push de
+	push bc
+;	call setupRD	; calculate the absolute memory address
+;*********************setup RAM Disk ****************************
+; calculate the absolute memory address
+;  calculate the MMU page descriptor value
+;  calculate offset from the base of the page descriptor value
+; each track is 1024 sectors of 128 byte/sec = 0x20000
+;   shift (track) left by one + shift (MSB sector) right by one
+;   shift (LSB sector) right 1bit with carry bit from MSB sector shift
+; return HL with offset within 0xE000
+
+;z calculate absolute address from track/sector values
+;z
+	ld a,(track)
+	ld h,a		; H is 0x08 + (track) [d5..d0] shifted left + (sector) d7
+	ld a,(sector)	; get sector value
+	sla a		; put most significant bit of sector into carry
+	rl h		; roll carry into reg H
+	or 0fh		; low nibble is 0xF
+	ld l,a
+	ld de,0800h	; base address of RAM disk in memory
+	add hl,de	; HL now contains 12-bit page descriptor plus attributes
+	push hl		;z save for later use
+;z use DMA instead of MMU
+	call DMAPage
+	ld c,DMActrl	; set up DMA master control
+	ld hl,0f0e0h	; software ready for dma0&1, no end-of-process, no links
+;	outw (c),hl	; write DMA master control reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA3cnt	; setup count of 512 byte
+	ld hl,512
+;	outw (c),hl	; write DMA3 count reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA3dstH	; destination is RAMdisk
+	pop hl		; get the calcuated RAM disk physical address
+;	outw (c),hl	; write DMA3 destination high reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+
+;	xor a		; clear reg A
+;	ld l,a		; clear the lower half of HL reg
+;	ld a,(sector)	; calculate address offset within the 4K page
+;	and 1fh		; only interested in lowest 5 bits, the number of 128-byte sector
+;	srl a
+;	rr l		; A+L is now the address offset within the 4K page
+;	or 0f0h		; force high nibble to 0xF
+;	ld h,a		; HL now point the address [A11..A0] in RAM disk
+	xor a		; clear reg A
+	ld l,a		; clear the lower half of HL reg
+	ld a,(sector)	; calculate address offset within the 4K page
+	and 7		; only interested in lowest 3 bits, the number of 512-byte sector
+	sla a		; derive the proper address
+	or 0f0h		; force high nibble to 0xF
+	ld h,a		; HL now point the address [A11..A0] in RAM disk		
+	ld c,DMA3dstL	; A11..A0 of destination address
+;	outw (c),hl	; write DMA3 source low reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA3srcH	; source is what's in dmaad
+	ld de,(dmaad)	; get the dmaad in reg de
+	ld h,0		; clear h register
+	ld a,0fh	; force lowest nibble of DMA3dstH to 0xF
+	or d
+	ld l,a		; A23..A16 is zero, A15..A12 is most significant nibble of dmaad		
+;	outw (c),hl	; write DMA3 source high reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+	ld c,DMA3srcL	;
+	ld a,0f0h	; force high nibble of DMA3srcL to 0xFF
+	or d
+	ld h,a		; move the lower 12 bits of address to source reg
+	ld l,e
+;	outw (c),hl	; write DMA3 source low reg
+	db 0edh,0bfh	; op code for OUTW (C),HL	
+	ld hl,8080h	; enable DMA3, burst, byte size, flowthrough, no interrupt
+;			;  incrementing memory for source & destination
+	ld c,DMA3td	; setup DMA3 transaction descriptor reg
+;	outw (c),hl	; write DMA3 transaction description reg
+	db 0edh,0bfh	; op code for OUTW (C),HL
+;  DMA should start now
+
+;	ld a,(track)	; offset= track*0x20000
+;	add a,a		; shift left by one
+;	ld hl,(sector)	; get sector value
+;	srl h
+;	rr l		; reg L is A[15..8] of address offset
+;	add a,h		; reg A is A[23..16] of address offset
+;	add a,70h		; the RAMdisk starts from 0x700000
+;	ld h,a		; reg HL is now A[23..8] of the address offset
+;	ld a,l
+;	and 0f0h		; mask off low nibble
+;	or 8h		; V/WP/C/M bits are 1/0/0/0
+;	ld l,a		; HL contains 12-bit page descriptor plus attributes
+;	call MMUPage	; set page I/O reg to MMU
+;	ld a,1eh		;x Use 0xE000-0xEFFF as window into high memory
+; write to system page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, system
+;	ld c,MMUsel	; write to MMU select port
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+;	ld a,0eh		;x User 0xE000-0xEFFF as window into high memory
+; write to user page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, user
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+; &&&&&&& do not use stack until MMU is restored &&&&&&&&&&&
+;	xor a		; clear reg A
+;	ld l,a		; clear the lower half of HL reg
+;	ld a,(sector)	; calculate address offset within the 4K page
+;	and 1fh		; only interested in lowest 5 bits, the number of 128-byte sector
+;	srl a
+;	rr l		; A+L is now the address offset within the 4K page
+;	add a,0e0h	;x offset in page 0xE000
+;	ld h,a		; HL now point the desired sector in page 0xE000
+;***************** setup RAM DISK ***********************
+;
+;	ld de,(dmaad)	; copy data to DMA location
+;	ex de,hl		; move from DMA to RAM
+;	ld bc,128		; copy 128 bytes
+;	ldir
+;	ld a,1eh		;x Use 0xE000-0xEFFF as window into high memory
+; write to system page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, system
+;	ld hl,0eah	;x logical = physical address, valid, cachable
+;	ld c,MMUsel	; write to MMU select port
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+;	ld a,0eh		;x User 0xE000-0xEFFF as window into high memory
+; write to user page descriptor associated with 0xE000-0xEFFF
+;	out (MMUptr),a	; point page descriptor to 0xE000-0xEFFF, user
+;	outw (c),hl	; write MMU page descriptor out
+;	db 0edh,0bfh	; op code for OUTW (C),HL
+;	nop		; wait a while before using stack
+; &&&&&&&&&&&&&&&&&&&&&&&&&&&& OK to use stack after this &&&&&&&&&&&&&&77
+;	nop
+	nop
+	nop
+	call UARTPage	; return page i/o reg to default value
+
+	
+	pop bc		;restore reg
+	pop de
+	pop hl
+	ld a,0		; return a OK status
+	ret
+
+		
+write:
+; write native CF sector of 512 bytes
+	ld a,(diskno)	; check if disk 4 (RAMdisk)
+	cp 4
+	jp z,RAMDISKw
+	push hl		;save reg
+	push bc
+;	call COUTdone	; wait for UART transmission done
+	call CFPage	; switch page i/o reg to CF ports
+; write 512byte data from dma buffer to CF
+	ld a,0x40		; set Logical Address addressing mode
+	out (CF2427),a
+	ld a,(sector)	;x since each track has 256 native sectors, don't need to do anything
+	out (CF07),a	; write LSB CF LA address
+	ld a,1		; read one sector
+	out (CFsectcnt),a	; write to sector count with 1
+	ld a,(track)	; get LSB track address
+	out (CF815),a	; write to CF LA register
+	ld a,(track+1)	; get MSB track address
+	out (CF1623),a	; write to CF LA register, MSB
+	ld a,0x30	; CF write command
+	out (CFstat),a
+	call readdrq	; check drq bit set before writing
+
+	ld hl,(dmaad)	; DMA address
+	ld c,CFdata	; reg C points to CF data reg
+	ld b,0h		; sector has 256 16-bit data
+	db 0edh,93h	; op code for outiw, output word and increment
+;	outiw
+	call readbsy	; check busy bit for write completion
+	call UARTPage	; restore the page i/o reg to UART
+	pop bc		; restore registers
+	pop hl
+	ld a,0		; return good read status
+	ret
+readbsy:
+; spin on CF status busy bit
+	in a,(CFstat)	; read CF status 
+	and 80h		; mask off all except busy bit
+	jp nz,readbsy
+	ret
+
+clear:
+	ld (hl),0	;mvi	m,0	
+	inc hl		;inx	h
+	dec b		;dcr	b
+	jp nz,clear	;jnz clear
+	ret
+; initialize MMU page descriptors
+initMMU:
+	push hl		; save register
+	push bc
+	ld a,0ah		; V/WP/C/M bits are 1/0/1/0
+	ld hl,MMUtbl	;   valid, not write protect, cacheable
+initMMUp
+	ld (hl),a		; store page descriptor value to table
+	inc hl		; MSB of page descriptor
+	ld (hl),0		; transparent mapping
+	inc hl
+	add 10h		; point to next page descriptor
+	cp 0ah		; end of table?
+	jp nz,initMMUp
+	xor a		; clear reg A 
+	out (MMUptr),a	; point to this page (page 0x0), user page descriptors	
+	ld hl,MMUtbl	; block move MMU page descriptors
+	ld c,MMUmove	; points to MMU block move port
+	ld b,16		; move 16 pages
+	db 0edh,93h	; op code for otirw, output word and increment
+;	otirw
+	ld a,10h		; repeat the block move for system page descriptors
+	out (MMUptr),a	; point to this page (page 0x0), user page descriptors	
+	ld hl,MMUtbl	; block move MMU page descriptors
+	ld c,MMUmove	; points to MMU block move port
+	ld b,16		; move 16 pages
+	db 0edh,93h	; op code for otirw, output word and increment
+;	otirw
+	ld c,MMUctrl	; point to MMU master control register
+	ld hl,0bbffh	; enable user & system  translate
+	db 0edh,0bfh	; op code for OUTW (C),HL
+;	outw (c),hl	; turn on MMU
+	pop bc		; restore register
+	pop hl
+	ret
+;;; initialize Z280 page i/o reg to point to MMU
+MMUPage:
+DMAPage
+	push bc		; save reg
+	push hl
+	ld c,8		; reg C points to I/O page reg
+	ld l,0ffh		; MMU page I/O reg is 0xFF
+	db 0edh,6eh	; op code for LDCTL (C),HL
+	pop hl
+	pop bc		; restore reg
+	ret
+	    
+; init Z280 page i/o reg to point to UART
+UARTPage:
+	push bc		; save register
+	push hl
+	ld c,0x08		; reg c points to I/O page register
+	ld l,0xFE		; set I/O page register to 0xFE
+	db 0xED,0x6E	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	
+	pop hl		; restore reg
+	pop bc
+	ret
+; init Z280 page i/o reg to point to compactflash
+CFPage:
+	push bc		; save register
+	push hl
+	ld c,0x8		; reg c points to I/O page register
+	ld l,0		; set I/O page register to 0
+	db 0xed,0x6e	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	; write to I/O page register
+	pop hl		; restore reg
+	pop bc
+	ret
+
+;---------------------------------------------------------------------------------------------------------------
+; debug functions (ideally to be removed in final version, if we ever get that far!)
+strout:     ; print string pointed to by HL
+            ld a, (hl)
+            cp 0
+            ret z
+            ld c, a
+            call conout
+            inc hl
+            jr strout
+ccpldok:
+	db "CCP load OK",0
+failed: db " Failed!!", 0
+signon:	
+	db	"Copyright"
+	db	" 1979 (c) by Digital Research      ",13,10
+	db "CP/M 3 for TinyZ280"
+        db " 3/25/18 3.5meg RAMdisk",13,10,0 
+;--------------------------------------------------------
+;
+;	initialized storage
+;
+;--------------------------------------------------------
+ccpstg:
+	db	'CCP     COM'
+opnmsg:
+	db	0dh,0ah,'BIOS can''t open CCP.COM $',0
+errmsg:
+	db	0dh,0ah,'BIOS has bad sector in CCP.COM $',0
+
+;---------------------------------------------------------------------------------------------------------------
+diskno: ds 1
+;;; since this is relocatable, base address is unknown
+; align to even address
+;	if ($ % 2)	; if current address is odd, insert a nop
+;	nop
+;	endif
+; scratch RAM used by BIOS
+track: 	ds 2
+sector: ds 2
+dmaad: 	ds 2
+MMUtbl	ds 32		; 16 pages of system MMU page descriptors
+; double bit allocation vector
+alv00:      ds 512            ; allocation vector for disk 0, must be (DSM/4)+2 bytes
+alv01:      ds 512            ; allocation vector for disk 1, must be (DSM/4)+2 bytes
+alv02:	ds 512		; allocation vector for disk 2, must be (DSM/4)+2 bytes
+alv03:	ds 512		; allocation vector for disk 3, must be (DSM/4)+2 bytes
+alv04:	ds 512		; allocation vector for disk 4 (RAMDisk), must be (DSM/4)+2 bytes
+	.extern @SCBBASE
+	.extern @CIVEC
+	.extern @COVEC
+	.extern @AIVEC
+	.extern @AOVEC
+	.extern @LOVEC
+	.extern @BNKBF
+	.extern @CRDMA
+	.extern @CRDSK
+	.extern @VINFO
+	.extern @RESEL
+	.extern @FX
+	.extern @USRCD
+	.extern @MLTIO
+	.extern @ERMDE
+	.extern @ERDSK
+	.extern @MEDIA
+	.extern @BFLGS
+	.extern @DATE
+	.extern @HOUR
+	.extern @MIN
+	.extern @SEC
+	.extern @ERJMP
+	.extern @MXTPA
+	
+	.public alv00
+	
+	END

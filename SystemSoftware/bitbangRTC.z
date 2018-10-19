@@ -1,0 +1,345 @@
+; 5/29/18
+; bit bang the real time clock
+; D[15]is data, D[9] is RTCEN, D[8] is clock
+; write to DS1302 on the rising edge, read DS1302 on the falling edge of clock
+; The data is shift in and out least significant bit first, so need to reverse bit order
+;  when reading or writing data
+bbR	equ 0a2h	; bit bang register I/O address
+bang0 	macro
+	ld a,2		;write 0 at the rising edge of clock
+	out (bbR),a
+	ld a,3
+	out (bbR),a
+	ld a,2
+	out (bbR),a
+	endm
+bang1	macro
+	ld a,82h		;write 1 at the rising edge of clock
+	out (bbR),a
+	ld a,83h
+	out (bbR),a
+	ld a,82h
+	out (bbR),a
+	endm	
+; need a modified bang0 that does not return clock to zero.
+;  This allows readRTC routine to drive data[15] to high (to tristate the data bus)
+;  and then drive clock to zero so DS1302 can output the correct data value.
+;  *******not implemented********
+;
+; **********to do*************
+; 1.  Do I really need to disable and enable RTC every time?
+; 2.  Explain that D[15..8] is the least significant byte.  
+;     When do a inw hl,(c), reg L contains D[15..8]
+; 3.  streamline the readRTC routine
+; 4.  Better comment for the routines
+
+	org 8000h		; program starts at 0x8000
+start:	
+	jr start1
+param:
+	db 0,0,0,0
+time:	db 0,0,0,0
+start1:	
+	call RTCPage
+	call enRTC	; enable RTC
+
+; write 0x8E (protection register)	
+	bang0
+	bang1
+	bang1
+	bang1
+	bang0
+	bang0
+	bang0
+	bang1	
+	
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0		; disable protection bit
+	
+	call disRTC
+
+	call enRTC
+; write $8F (read protection register)	
+	bang1
+	bang1
+	bang1
+	bang1
+	bang0
+	bang0
+	bang0
+	bang1
+; read lsb bit on falling edge of clock
+	call readRTC
+	ld (param),a	; save value to parameter field
+; write 0x90 (trickle charge reg) with $A5 (1 diode, 2K ohm)
+	
+	bang0
+	bang0
+	bang0
+	bang0
+	bang1
+	bang0
+	bang0
+	bang1	
+	
+	bang1
+	bang0
+	bang1
+	bang0
+	bang0
+	bang1
+	bang0
+	bang1		; disable protection bit
+	
+	call disRTC
+	
+	call enRTC
+; write 0x91 (read trickle charge register)	
+	bang1
+	bang0
+	bang0
+	bang0
+	bang1
+	bang0
+	bang0
+	bang1		
+
+	call readRTC
+	ld (param+1),a	; save value to parameter field
+	call disRTC
+	call enRTC
+
+; write 0x85 to read hour value
+
+	bang1
+	bang0
+	bang1
+	bang0
+	bang0
+	bang0
+	bang0
+	bang1		
+
+	call readRTC
+	ld (time+1),a	;save hour
+	call disRTC
+	call enRTC
+; write 83 to read minute value
+	bang1
+	bang1
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang1
+	
+	call readRTC
+	ld (time+2),a	;save minute
+	call disRTC
+	call enRTC
+	
+
+; write 0x81 to read clock second reg
+	bang1
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang0
+	bang1
+	
+	call readRTC
+	ld (time+3),a
+	call disRTC
+	call enRTC
+	
+; write 87 to read clock days register
+	bang1
+	bang1
+	bang1
+	bang0
+	bang0
+	bang0
+	bang0
+	bang1
+	call readRTC
+	ld (time),a
+	call disRTC
+	call enRTC
+
+; write 0x89 to read clock month register
+	bang1
+	bang0
+	bang0
+	bang1
+	bang0
+	bang0
+	bang0
+	bang1
+	call readRTC
+	ld (param+3),a
+	call disRTC
+	call enRTC
+
+; write 0x8D to read clock year register
+	bang1
+	bang0
+	bang1
+	bang1
+	bang0
+	bang0
+	bang0
+	bang1
+	call readRTC
+	ld (param+2),a
+	call disRTC
+	
+
+
+
+	
+	call UARTPage
+	jp 0h
+
+readRTC:
+; value is return in regA
+	push bc		; save reg BC
+	push hl
+	ld b,0		; clear reg B
+	ld c,bbR	; point to bitbang register	
+;get bit 7
+; The output data bit must be high to tristate the D[15] data bus bit
+; to allow DS1302 to drive the data bit to the right value
+; This just happen to be true since all calling routines drive the data[15] high
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 6	
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 5
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 4
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 3
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 2
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+;get bit 1
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+; get bit 0
+	ld a,83h	; clock high, read on falling edge of clock
+	out (bbR),a
+	ld a,82h		; falling edge of clock
+	out (bbR),a
+	db 0edh,0b7h	; op code for inw hl,(c)
+;	inw hl,(c)	
+	rl l		; rotate data into carry flag
+	rr b		; rotate carriage flag into reg B
+	
+	ld a,b		; transfer result to reg A
+	pop hl
+	pop bc
+	ret
+	
+enRTC:
+	ld a,2		; enable RTC, clock low, data low
+	out (bbR),a	; need 1uS from enable to first rising edge of clock
+	call delay
+	ret
+	
+; disable RTC
+disRTC:	
+	ld a,0		;disable RTC
+	out (bbR),a
+	call delay
+	ret
+	
+; a short delay	
+delay:
+	jp delay1
+delay1:
+	jp delay2
+delay2:
+	ret	
+; init page i/o reg to point to UART
+UARTPage:
+	push bc		; save register
+	push hl
+	ld c,08h		; reg c points to I/O page register
+	ld l,0feh		; set I/O page register to 0xFE
+	db 0edh,6eh	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	; write to I/O page register
+;	ld a,0e2h		; initialize the UART configuration register
+;	out (UARTconf),a
+;	ld a,80h		;enable UART transmit and receive
+;	out (TxStat),a
+;	out (RxStat),a
+	pop hl		; restore reg
+	pop bc
+	ret
+
+; init page i/o reg to point to compactflash
+RTCPage:
+	push bc		; save register
+	push hl
+	ld c,08h		; reg c points to I/O page register
+	ld l,0		; set I/O page register to 0
+	db 0edh,6eh	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	; write to I/O page register
+	pop hl		; restore reg
+	pop bc
+	ret
+
+
+	END

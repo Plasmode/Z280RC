@@ -1,0 +1,413 @@
+;  
+; originally from LDRBIOS of cpm3on2 downloaded from cpm.z80.de
+; part of the code is from Alan Cox which is based on MPM ldrbios from Will Sowerbutts
+
+.z80 ; prefer z80 mnemonics
+
+; Z280 internal UART
+UARTconf	equ 0x10		; UART configuration reg
+RxData  	equ 0x16        	; on-chip UART receive register
+TxData  	equ 0x18        	; on-chip UART transmit register
+RxStat  	equ 0x14        	; on-chip UART transmitter status/control register
+TxStat  	equ 0x12        	; 0n-chip UART receiver status/control register
+; CF interface registers
+CFdata   	equ 0xC0    	;CF data register
+CFerr    	equ 0xC2    	;CF error reg
+CFsectcnt 	equ 0xC5    	;CF sector count reg
+CF07     	equ 0xC7   	;CF LA0-7
+CF815    	equ 0xC9      	;CF LA8-15
+CF1623   	equ 0xCB       	;CF LA16-23
+CF2427   	equ 0xCD       	;CF LA24-27
+CFstat   	equ 0xCF       	;CF status/command reg
+MMUctrl		equ 0xf0		; MMU master control reg
+MMUptr		equ 0xf1		; MMU page descriptor reg pointer
+MMUsel		equ 0xf5		; MMU descriptor select port
+MMUmove		equ 0xf4		; MMU block move port
+MMUinv		equ 0xf2		; MMU invalidation port
+
+	CSEG
+; jump vector table used by CP/M
+            jp boot         ; cold start
+wboote:     jp bad1          ; warm start
+            jp bad2	    ; console status
+            jp bad2          ; console character in
+            jp conout       ; console character out
+            jp bad9          ; list character out
+            jp bad9          ; punch character out
+            jp bad9          ; reader character out
+            jp home         ; move disk head to home position
+            jp seldsk       ; select disk
+            jp seltrk       ; set track number
+            jp setsec       ; set sector number
+            jp setdma       ; set DMA address
+            jp read         ; read disk
+            jp bad3          ; write disk
+            jp bad9          ; return list status
+            jp sectran      ; sector translate
+            jp bad2	    ; console output ready
+            jp bad4	    ; aux input is ready
+            jp bad4	    ; aux output is ready
+            jp bad4	    ; device table
+            jp bad4	    ; device init
+            jp bad4 	    ; drive table
+            jp bad5 	    ; multi block I/O
+            jp bad9	    ; flush data to disc
+            jp move	    ; block move (including banking)
+            jp bad9	    ; get current data and time into SCB
+            jp bad9	    ; select memory bank. Special: preserve regs
+            jp bad9	    ; set the bank for the next read/write sector
+            jp bad9	    ; set up for cross bank move
+            jp bad9	    ; extended BIOS
+            jp 0	    ; reserved
+            jp 0	    ; reserved
+
+
+; CP/M 3 style disk parameter header
+;  See section 3.3.2 of system guide
+dpbase0:
+            ; disk 0 (A)
+            dw 0            ; sector translation table (0 = no translation)
+	    db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+	    db 0            ; Media flag
+            dw dpblk0        ; DPB (disk parameter block)
+            dw 0            ; CSV (unique scratch pad used to check for changed disks)
+            dw alv00        ; ALV (unique scratch pad for allocation information)
+	    dw dirbcb0	    ; Directory buffer control block
+	    dw dtabcb       ; DTAB CB
+            dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+            db 0            ; HASH bank
+            ; end of disk 0
+
+;ydpbase1:
+            ; disk 1 (B)
+;y            dw 0            ; sector translation table (0 = no translation)
+;y	    db 0,0,0,0,0,0,0,0,0  ; BDOS scratch area
+;y	    db 0            ; Media flag
+;y            dw dpblk1        ; DPB (disk parameter block)
+;y            dw 0            ; CSV (unique scratch pad used to check for changed disks)
+;y            dw alv01        ; ALV (unique scratch pad for allocation information)
+;y	    dw dirbcb1	    ; Directory buffer control block
+;y	    dw dtabcb       ; DTAB CB
+;y            dw 0xFFFF       ; HASH, 0xFFFF disable hashing
+;y            db 0            ; HASH bank
+            ; end of disk 0
+
+
+ndisks      equ 1           ; number of disks we defined
+;  see section 3.3.4 of system guide for buffer control block
+dirbcb0:    db 0xFF	    ; Disk Drive, set to 0xFF--do not use GENCPM
+            ds 3	    ; Record
+            ds 1            ; Write Buffer Flag
+            db 0            ; BDOS scratch byte
+            ds 2            ; Track
+            ds 2            ; Sector
+            dw dirb0        ; Directory buffer
+            db 0	    ; Bank
+            dw 0	    ; Link, 0 for last BCB in the linked list
+
+;ydirbcb1:    db 0xFF	    ; Disk Drive, set to 0xFF--do not use GENCPM
+;y            ds 3	    ; Record
+;y            ds 1            ; Write Buffer Flag
+;y            ds 1            ; BDOS scratch byte
+;y            ds 2            ; Track
+;y            ds 2            ; Sector
+;y            dw dirb1        ; Directory buffer
+;y            db 0	    ; Bank
+;y            dw 0	    ; Link, 0 for last BCB in the linked list
+
+dtabcb:     db 0xFF	    ; Disk Drive, set to 0xFF--do not use GENCPM
+            ds 3	    ; Record
+            ds 1            ; Write Buffer Flag
+            db 0            ; BDOS scratch byte
+            ds 2            ; Track
+            ds 2            ; Sector
+            dw data0        ; Data buffer
+            db 0	    ; Bank
+            dw 0	    ; Link, 0 for last BCB in the linked list
+
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 62 tracks
+;  track offset of 1
+;  see section 3.3.3 of system guide
+dpblk0:
+	dw 1024		;sectors per track (SPT)
+
+	db 5		; block shift factor (BSH)
+	db 31		;block mask (BLM)
+	db 1		;null mask (EXM)
+	dw 1983		;disk size-1 (DSM)
+	dw 511		;directory max (DRM)
+	db 0xf0		;alloc 0 (AL0)
+	db 0		;alloc 1 (AL1)
+	dw 0		;check size (CKL)
+	dw 1		; track offset (OFF)
+	db 2	    	; PSH - 128 byte sectors
+	db 3	    	; PHM - 128 byte sectors
+;x	db 0		; managing my own block/deblock so PSH, PHM are 0
+;x	db 0
+	
+; DPB like Tiny68K, BLS 4096, 1024 sector, 64 sectors per block, 64 tracks
+;  track offset of 64
+;ydpblk1:
+;y	dw 1024		;sectors per track (SPT)
+;y	db 5		; block shift factor (BSH)
+;y	db 31		;block mask (BLM)
+;y	db 1		;null mask (EXM)
+;y	dw 1983		;disk size-1 (DSM)
+;y	dw 511		;directory max (DRM)
+;y	db 0xf0		;alloc 0 (AL0)
+;y	db 0		;alloc 1 (AL1)
+;y	dw 0		;check size (CKL)
+;y	dw 64		; track offset (OFF)
+;y	db 2	    	; PSH - 128 byte sectors
+;y	db 3	    	; PHM - 128 byte sectors
+;x	db 0		; managing my own block/deblock so PSH, PHM are 0
+;x	db 0
+; bios functions follow
+
+boot:
+;	ld (savestk),sp		; save the calling stack
+;	ld sp,stack		; stack for the boot routine
+	call UARTPage		; default page i/o reg is internal UART
+	ld a,0xE2		; initialize the UART configuration register
+	out (UARTconf),a
+	ld a,0x80		;enable UART transmit 
+	out (TxStat),a
+;	out (RxStat),a		; no need to enable receive, not talking to anyone
+
+	ld hl, bootstr
+        call strout
+;	ld sp,(savestk)	; restore the calling stack before return
+	ret		    ; Must return to loader when finished.
+; several different failed states, print a number followed with 'FAILED!!'	    
+bad1:	ld c,'1'
+	jp bad
+bad2:	ld c,'2'
+	jp bad
+bad3:	ld c,'3'
+	jp bad
+bad4:	ld c,'4'
+	jp bad
+bad5:	ld c,'5'
+	jp bad
+bad9:	ld c,'9'
+	    
+bad:
+	call CONOUT		; put out whatever was in reg C
+        ld hl,failed
+        call strout
+spin:	jr spin
+
+conout:     ; write character from C to console
+	in a,(TxStat)		; transmit empty?
+	and 1
+	jp z,CONOUT
+	ld a,c			; get char to accumulator
+	out (TxData),a		; put it out to internal Z280 UART
+	ret
+
+
+seldsk:     ; select disk indicated by register C
+       
+            ld hl, 0    ; return code 0 indicates error
+            ld a, c
+            cp ndisks
+            ret nc      ; return (with error code) if C >= ndisks ie illegal drive
+            ld (diskno), a ; store current disk
+            ld hl, dpbase0
+;y	    or a
+;y	    ret z
+;y	    ld hl, dpbase1
+            ret
+
+home:       
+	    ld bc, 0
+            ; fall through into seltrk
+seltrk:     ; set track given by register BC
+;            ld a, c
+            ld (track),bc
+            ret
+
+setsec:     ; set sector given by register BC
+;            ld a, c
+            ld (sector),bc
+            ret
+
+sectran:    ; logical to physical sector translation
+            ; HL=BC ie 1:1 mapping (no translation)
+            ld h, b
+            ld l, c
+            ret
+
+devini:	    ; re-initialize device C, called on baud/mode change
+            ; nothing to do for now
+            ret
+
+setdma:     ; set DMA address given by BC
+	ld l,c
+	ld h,b
+            ld (dmaad), hl 
+            ret
+move:
+; use ldir instruction to do block move
+	ex de,hl		;xchg
+	ldir
+	ex de,hl		;xchg
+	ret
+	    
+
+read:    
+	push hl		;save reg
+	push de
+	push bc
+;	call COUTdone	; wait for UART transmission done
+	call CFPage	; switch page i/o reg to CF ports
+; check if sector data already existed in buffer
+;x	ld a,(sector+1)	; get MSB sector address into reg B
+;x	ld b,a
+;x	ld a,(sector)	; get LSB sector address into reg A
+;x	srl b		; 16-bit shift one bit
+;x	rra
+;x	srl b		; 16-bit shift another bit
+;x	rra		; reg A has the 512-byte sector value
+;x	ld b,a		; save it in b, need to use if in READnew
+;x	ld hl,CFLA07	; CF LA LSB
+;x	cp (hl)
+;x	jp nz,getNEW
+;x	ld a,(track)	; LSB track address
+;x	inc hl		; points to CFLA815
+;x	cp (hl)		; compare to CF LA 8-15
+;x	jp nz,getNEW
+;x	ld a,(track+1)	; MSB track address
+;x	inc hl		; points to CFLA1623
+;x	cp (hl)		; compare to CF LA 16-23
+;x	jp z,move2DMA
+;xgetNEW:
+	call READnew	; fetch new 512byte data from CF
+;x get the 128-byte data in the buffer to DMA address
+; get the 512-byte data in the buffer to DMA address
+;ymove2DMA:
+;y	ld de,(dmaad)	; get DMA address
+;x	ld bc,128		; set up 128 byte memory to memory copy
+;y	ld bc,512	; native sector size of 512 bytes
+;y	ld hl,CFsecdat0	; assume first 128 byte of buffer
+;x	ld a,(sector)	; get LSB sector address
+;x	and 3		; mask off hig bits
+;x	jp z,movesec	; if zero then data is in first 128 bytes of buffer
+;x	cp 1
+;x	jp z,movesec1	; if 1 then data is in 2nd 128-byte block of buffer
+;x	cp 2
+;x	jp z,movesec2	; if 2 then data is in 3rd 128-byte block of buffer
+;x	ld hl,CFsecdat3	; must be in last 128 bytes of buffer
+;x	jp movesec
+;xmovesec1:
+;x	ld hl,CFsecdat1
+;x	jp movesec
+;xmovesec2:
+;x	ld hl,CFsecdat2
+;ymovesec:
+;y	ldir		; copy existing 128 bytes of data to DMA address
+	call UARTPage	; restore the page i/o reg to UART
+	pop bc		; restore registers
+	pop de
+	pop hl
+	ld a,0		; return good read status
+	ret
+
+READnew:
+; read new CF sector into buffer
+; save sector/track data into current CF sector/track
+; reg B contains the 512-byte sector value
+	ld a,0x40		; set Logical Address addressing mode
+	out (CF2427),a
+;x	ld a,b		; save 512-byte sector value
+	ld a,(sector)	;x since each track has 256 native sectors, don't need to do anything
+	ld (CFLA07),a
+	out (CF07),a	; write LSB CF LA address
+	ld a,1		; read one sector
+	out (CFsectcnt),a	; write to sector count with 1
+	ld a,(track)	; get LSB track address
+	ld (CFLA815),a	; update current CF track value, LSB
+	out (CF815),a	; write to CF LA register
+	ld a,(track+1)	; get MSB track address
+	ld (CFLA1623),a	; update current CF track value, MSB
+	out (CF1623),a	; write to CF LA register, MSB
+	ld a,0x20		; read CF sector command
+	out (CFstat),a	; issue the CF read sector comand
+	in a,(CFstat)	; outjmp bug fix
+	call readdrq	; check drq bit set before read CF data
+	
+;y	ld hl,CFsecdat0	; store CF data to buffer
+	ld hl,(dmaad)	;y go straight from CF data reg to DMA address
+	ld c,CFdata	; reg C points to CF data reg
+	ld b,0		; sector has 256 16-bit data
+	db 0xed,0x92	; op code for inirw input word and increment
+;	inirw
+	in a,(CFstat)	;outjmp bug fix
+	ret
+readdrq:
+	in a,(CFstat)	; check data request bit set before read CF data
+	and 8		; bit 3 is DRQ, wait for it to set
+	jp z,readdrq
+	ret
+;    
+; init Z280 page i/o reg to point to UART
+UARTPage:
+	push bc		; save register
+	push hl
+	ld c,0x08		; reg c points to I/O page register
+	ld l,0xFE		; set I/O page register to 0xFE
+	db 0xED,0x6E	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	
+	pop hl		; restore reg
+	pop bc
+	ret
+; init Z280 page i/o reg to point to compactflash
+CFPage:
+	push bc		; save register
+	push hl
+	ld c,0x8		; reg c points to I/O page register
+	ld l,0		; set I/O page register to 0
+	db 0xed,0x6e	; this is the op code for LDCTL (C),HL
+;	ldctl (c),hl	; write to I/O page register
+	pop hl		; restore reg
+	pop bc
+	ret
+
+;---------------------------------------------------------------------------------------------------------------
+; debug functions (ideally to be removed in final version, if we ever get that far!)
+strout:     ; print string pointed to by HL
+            ld a, (hl)
+            cp 0
+            ret z
+            ld c, a
+            call conout
+            inc hl
+            jr strout
+
+failed: db " FAILED!!", 0
+bootstr: db 13,10,"Boot LDRBIOS", 0
+;---------------------------------------------------------------------------------------------------------------
+;.align
+xxalign	ds 1		; align the following on word boundary
+; scratch RAM used by BIOS
+track: 	ds 2
+sector: ds 2
+dmaad: 	ds 2
+diskno: ds 1
+CFLA07	ds 1		;CF LA address, LSB
+CFLA815	ds 1
+CFLA1623 ds 1		;CF LA address, MSB
+
+;yCFsecdat0 ds 128		;;;CF sector data, 512 bytes
+;yCFsecdat1 ds 128
+;yCFsecdat2 ds 128
+;yCFsecdat3 ds 128
+
+dirb0:      ds 128           ; directory scratch area
+;ydirb1:      ds 128           ; directory scratch area
+data0:	    ds 128	     ; data scratch area
+; double bit allocation
+alv00:      ds 512            ; allocation vector for disk 0, must be (DSM/4)+2 bytes
+;yalv01:      ds 512            ; allocation vector for disk 1, must be (DSM/4)+2 bytes
+
+	END
