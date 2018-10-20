@@ -51,7 +51,7 @@ Bill of Material for Z280RC
 
 Engineering Changes
 
-Pictorial assembly guide
+[Pictorial assembly guide](Manuals/Z280RC%20assembly%20guide.md)
 
 Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC100 programming file for 29.4912MHz system clock.
 
@@ -73,7 +73,7 @@ Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC10
 
 * [Getting Started](Manuals/GettingStartedGuide.md) Guide
 * [ZZMon](Manuals/ZZMon_manual.md) operating manual
-* Create a new CF disk for Z280RC
+* [Create a new CF disk](Manuals/Creating_new_CF_for_Z280RC.md) for Z280RC
 
 ### Reference
 
