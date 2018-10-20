@@ -5,7 +5,7 @@ This page describes the steps for creating a new CF disk for Z280RC. The process
 ## Load ZZMon in UART Bootstrap mode
 
 Enable the UART Bootstrap mode by removing the Mode jumper.
-Send '[loadngo.run](./SystemSoftware/loadngo.run) ' as binary file: ← **Please note: it may be necessary to add 1ms transmission delay to every line**
+Send '[loadngo.run](../SystemSoftware/loadngo.run) ' as binary file: ← **Please note: it may be necessary to add 1ms transmission delay to every line**
 ```
 ……………………………………………………………………………………………………………………………………………UX
 TinyZZ Monitor v0.99 6/9/18
@@ -36,7 +36,7 @@ With 'c0' command, CFMon & ZZMon is copied to the CF disk. This concludes the lo
 Enable the CF bootstrap mode and reset. It is not necessary to add line transmission delay to the serial port communication in the following.
 ### Install CP/M2.2
 
-Load [cpm22all.hex](./SystemSoftware/cpm22all.hex) before issuing 'c2' command.
+Load [cpm22all.hex](../SystemSoftware/cpm22all.hex) before issuing 'c2' command.
 ```
 TinyZZ Monitor v0.99 6/9/18
 
