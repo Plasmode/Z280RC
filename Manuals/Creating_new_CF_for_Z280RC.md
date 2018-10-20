@@ -1,11 +1,11 @@
 # Creating a new CF disk for Z280RC with ZZMon ver 0.99
 ## Introduction
 
-This page describes the steps for creating a new CF disk for Z280RC. The process has been tested successfully for several brands of CF and for size from 64meg to 4G. TeraTerm is the terminal program, but the procedure should work for terminal programs that can send binary & ASCIIfiles. The instruction notes are in **bold**, the response of Z280RC is in `code section`. The software version of ZZMon is 0.99.
+This page describes the steps for creating a new CF disk for Z280RC. The process has been tested successfully for several brands of CF and for size from 64meg to 4G. TeraTerm is the terminal program, but the procedure should work for terminal programs that can send binary & ASCIIfiles. The response of Z280RC is in `code section`. The software version of ZZMon is 0.99.
 ## Load ZZMon in UART Bootstrap mode
 
 Enable the UART Bootstrap mode by removing the Mode jumper.
-Send 'loadngo.run ' as binary file: ← **Please note: it may be necessary to add 1ms transmission delay to every line**
+Send '[loadngo.run](./SystemSoftware/loadngo.run) ' as binary file: ← **Please note: it may be necessary to add 1ms transmission delay to every line**
 ```
 ……………………………………………………………………………………………………………………………………………UX
 TinyZZ Monitor v0.99 6/9/18
@@ -26,7 +26,7 @@ C <options> CR
 0–boot,
 1–User Apps,
 2–CP/M2.2,
-3–CP/M3: **0** press Return to execute command
+3–CP/M3: 0 press Return to execute command
 ```
 ### Install CFMon and ZZMon
 
@@ -36,7 +36,7 @@ With 'c0' command, CFMon & ZZMon is copied to the CF disk. This concludes the lo
 Enable the CF bootstrap mode and reset. It is not necessary to add line transmission delay to the serial port communication in the following.
 ### Install CP/M2.2
 
-Load cpm22all.hex before issuing 'c2' command.
+Load [cpm22all.hex](./SystemSoftware/cpm22all.hex) before issuing 'c2' command.
 ```
 TinyZZ Monitor v0.99 6/9/18
 
