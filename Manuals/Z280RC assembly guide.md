@@ -20,16 +20,16 @@ This is a step-by-step guide for assembly of Z280RC.
 
 5. Install the 68-pin PLCC socket. The mitred corner of the socket should match the silkscreen.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37600901_copy.jpg
+![](Z280assembly4top.jpeg)
 
 6. Do not populate the board with Z280 nor oscillator. First connect Altera programming cable to the 2×5 header and power up the board. Program the Altera CPLD and verify the part is correctly programed.
 
 7. Populate Z280 and 29.49MHz oscillator. Connect CP2102 USB-serial adapter to the serial port, do not jumper T5 (Bootstrap), set terminal software to 115200, odd parity, 8 data bit, 1 stop and no handshake. Set delay-per-line to 1 millisecond. Power up the board and send the file “loadngo.hex”. If terminal displays several lines of dots followed by a sign-on message, proceed to step 8.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37620901_copy.jpg
+![](Z280assembly5top.jpeg)
 
 8. Solder the 44-pin CF adapter. This completes the assembly of Z280RC.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37630901_copy.jpg
+![](Z280assemblyfinaltop.jpeg)
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37640901.jpg
+![](Z280assemblyfinalbot.jpeg)
