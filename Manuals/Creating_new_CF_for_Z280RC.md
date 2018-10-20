@@ -9,8 +9,8 @@ Send 'loadngo.run ' as binary file: ← **Please note: it may be necessary to ad
 ```
 ……………………………………………………………………………………………………………………………………………UX
 TinyZZ Monitor v0.99 6/9/18
-```
->**h**elp
+
+>help
 G <addr> CR
 R <track> <sector>
 D <start addr> <end addr>
@@ -22,11 +22,12 @@ X <options> CR
 B <options> CR
 C <options> CR
 
->**c**opy to CF
+>copy to CF
 0–boot,
 1–User Apps,
 2–CP/M2.2,
 3–CP/M3: **0** press Return to execute command
+```
 ### Install CFMon and ZZMon
 
 With 'c0' command, CFMon & ZZMon is copied to the CF disk. This concludes the loading of bootstrap software in UART bootstrap mode. The remainder of the instruction is carried out with the Mode jumper installed and Z280RC operates in CF bootstrap mode.
@@ -36,7 +37,7 @@ Enable the CF bootstrap mode and reset. It is not necessary to add line transmis
 ### Install CP/M2.2
 
 Load cpm22all.hex before issuing 'c2' command.
-
+```
 TinyZZ Monitor v0.99 6/9/18
 
 >………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………….UX
@@ -48,10 +49,11 @@ TinyZZ Monitor v0.99 6/9/18
 1–User Apps,
 2–CP/M2.2,
 3–CP/M3: 2 press Return to execute command
-Install CP/M 3
+```
+### Install CP/M 3
 
 Load cpmldr.hex before issuing 'c3' command.
-
+```
 >…………………………………………………………………………………………………………X
 
 >
@@ -61,10 +63,11 @@ Load cpmldr.hex before issuing 'c3' command.
 1–ZZMon,
 2–CP/M2.2,
 3–CP/M3: 3 press Return to execute command
-Install CP/M22 distribution files
+```
+### Install CP/M22 distribution files
 
 Clear drives A/B/C/D before loading CPM distribution files
-
+```
 >x clear disk directories
 A – drive A,
 B – drive B,
@@ -92,15 +95,15 @@ B – drive B,
 C – drive C,
 D – drive D,
 E – RAM drive: D press Return to execute command
-
+```
 load cpm22dri.hex, this is the cpm22 distribution files.
-
+```
 >E………………………………………………………………long response, truncated……………………………………………..X
 
 >
-
+```
 The distribution files are now in drive E. Boot CPM22 and copy files from drive E to drive B.
-
+```
 >boot CP/M
 1–User Apps,
 2–CP/M2.2,
@@ -134,19 +137,19 @@ STAT.COM
 SUBMIT.COM
 SYSGEN.COM
 XSUB.COM
-
+```
 CPM22 distribution files are now successfully copied to drive B.
-Install CP/M 3 distribution files
+### Install CP/M 3 distribution files
 
 Load the CPM3 distribution files, CPM3DSTR.HEX
 It is a big file, taking 2 minutes and 20 seconds to load at 115200 buad.
-
+```
 e>TinyZZ Monitor v0.99 6/9/18
 
 >E………………………………………………………………long response, truncated……………………………………………..X
-
+```
 The distribution files are in drive E. Boot with CPM22 and copy drive E to drive A.
-
+```
 >boot CP/M
 1–User Apps,
 2–CP/M2.2,
@@ -234,10 +237,10 @@ TRACE.UTL
 TYPE.COM
 XMODEM.COM
 XREF.COM
-
+```
 CPM3 is now in drive A.
 The disk is now bootable with CPM3
-
+```
 >TinyZZ Monitor v0.99 6/9/18
 
 >boot CP/M
@@ -269,11 +272,12 @@ A: PIP COM : PORTS LIB : PUT COM : RANDOM ASM : RENAME COM
 A: RESBDOS3 SPR : RMAC COM : SAVE COM : SCB REL : SET COM
 A: SETDEF COM : SHOW COM : SID COM : SUBMIT COM : TRACE UTL
 A: TYPE COM : XMODEM COM : XREF COM
+```
 Install optional game files
 
 load the Zork123 games to drive E and copy to drive D.
 It is also a big file taking 4 minutes 30 seconds to load.
-
+```
 A>TinyZZ Monitor v0.99 6/9/18
 
 >E………………………………………………………………long response, truncated……………………………………………..X
@@ -293,9 +297,9 @@ b>pip d:=e:*.pkg
 
 COPYING -
 ZORK123.PKG
-
+```
 Upload depkg.com via xmodem to decompress zork123.pkg
-
+```
 b>dir
 B: ASM COM : BIOS ASM : CBIOS ASM : DDT COM
 B: DEBLOCK ASM : DISKDEF LIB : DUMP COM : DUMP ASM
@@ -413,3 +417,4 @@ There is a small mailbox here.
 Your score is 0 (total of 350 points), in 0 moves.
 This gives you the rank of Beginner.
 Do you wish to leave the game? (Y is affirmative): >y
+```
