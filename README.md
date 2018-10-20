@@ -57,17 +57,17 @@ Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC10
 
 ### Software
 
-    ZZMon – monitor rev 0.99 for Z280RC. Assembled with Zilog ZDS v3.68
-    LoadnGo – load file to start up ZZMon in UART bootstrap mode
-    CP/M2.2, CPM22ALL to be assembled with Zilog ZDS v3.68. This is the entire CP/M2.2 including BDOS, CCP, and BIOS
-    CP/M2.2 Intel Hex load file to be loaded by ZZMon at location 0xDC00-0xFFFF and then copy to CF track 0 using the 'C2' command
-    CP/M3 LDRBIOS to be assembled with ZMAC into LDRBIOS.REL and then linked in CP/M as follow: LINK CPMLDR[L100]=CPMLDR, LDRBIOS
-    CP/M3 CBIOS3 (non-banked) to be assembled with ZMAC into CBIOS3.REL and then linked in CP/M as follow: LINK BIOS3[OS]=CBIOS3,SCB
-    CP/M3 CPMLDR.COM linked to 0x1100. This is an Intel Hex file to be loaded by ZZMon at location 0x1100 and copy to CF track 0 using the 'C3' command
-    CP/M2.2 DRI distribution image
-    CP/M3 distribution image
-    SC Monitor by Steve Cousins can be downloaded from here. Instruction to customize SC Monitor for Z280RC and load it into CF disk for fast startup.
-    DS1302 test software. These are test software to demonstrate the DS1302 RTC is operating properly. bitbangRTC1st should be run first to enable the super capacitor charging circuit and to set the time. bitbangRTC is used to read the RTC afterward. These test software were assembled using zmac
+ZZMon – monitor rev 0.99 for Z280RC. Assembled with Zilog ZDS v3.68
+LoadnGo – load file to start up ZZMon in UART bootstrap mode
+CP/M2.2, CPM22ALL to be assembled with Zilog ZDS v3.68. This is the entire CP/M2.2 including BDOS, CCP, and BIOS
+CP/M2.2 Intel Hex load file to be loaded by ZZMon at location 0xDC00-0xFFFF and then copy to CF track 0 using the 'C2' command
+CP/M3 LDRBIOS to be assembled with ZMAC into LDRBIOS.REL and then linked in CP/M as follow: LINK CPMLDR[L100]=CPMLDR, LDRBIOS
+CP/M3 CBIOS3 (non-banked) to be assembled with ZMAC into CBIOS3.REL and then linked in CP/M as follow: LINK BIOS3[OS]=CBIOS3,SCB
+CP/M3 CPMLDR.COM linked to 0x1100. This is an Intel Hex file to be loaded by ZZMon at location 0x1100 and copy to CF track 0 using the 'C3' command
+CP/M2.2 DRI distribution image
+CP/M3 distribution image
+SC Monitor by Steve Cousins can be downloaded from here. Instruction to customize SC Monitor for Z280RC and load it into CF disk for fast startup.
+DS1302 test software. These are test software to demonstrate the DS1302 RTC is operating properly. bitbangRTC1st should be run first to enable the super capacitor charging circuit and to set the time. bitbangRTC is used to read the RTC afterward. These test software were assembled using zmac
 
 ### Manual
 
@@ -77,7 +77,8 @@ Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC10
 
 ### Reference
 
-    Z280 Technical Manual
-    DS1302 data sheet
-    HY5118164 1meg x 16 EDO DRAM
+Z280 Preliminary [Technical Manual](References/Z280_MPU_(noocr_bw_400).pdf) (July 1987)
+Z280 [Product Specification](References/z280mpu_specification.pdf) (with AC parametrics)
+[DS1302](References/DS1302.pdf) data sheet
+[HY5118164](References/HY5118164C.pdf) 1meg x 16 EDO DRAM
 
