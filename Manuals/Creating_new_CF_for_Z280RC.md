@@ -52,7 +52,7 @@ TinyZZ Monitor v0.99 6/9/18
 ```
 ### Install CP/M 3
 
-Load cpmldr.hex before issuing 'c3' command.
+Load [cpmldr.hex](../SystemSoftware/CPMLDR.HEX) before issuing 'c3' command.
 ```
 >…………………………………………………………………………………………………………X
 
@@ -96,7 +96,7 @@ C – drive C,
 D – drive D,
 E – RAM drive: D press Return to execute command
 ```
-load cpm22dri.hex, this is the cpm22 distribution files.
+load [cpm22dri.hex](../SystemSoftware/CPM22DRI.hex), this is the cpm22 distribution files.
 ```
 >E………………………………………………………………long response, truncated……………………………………………..X
 
@@ -141,7 +141,7 @@ XSUB.COM
 CPM22 distribution files are now successfully copied to drive B.
 ### Install CP/M 3 distribution files
 
-Load the CPM3 distribution files, CPM3DSTR.HEX
+Load the CPM3 distribution files, [CPM3DSTR.HEX](../SystemSoftware/CPM3DSTR.HEX)
 It is a big file, taking 2 minutes and 20 seconds to load at 115200 buad.
 ```
 e>TinyZZ Monitor v0.99 6/9/18
