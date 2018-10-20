@@ -4,19 +4,19 @@ This is a step-by-step guide for assembly of Z280RC.
 
 1. Assemble EPM7128SQC100 and HY5118164 first, followed by SMD capacitors and resistors. Observe the polarity marks of the SMD capacitors.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37550901_copy.jpg
+![](Z280assembly1top.jpeg)
 
 2. Install SMD capacitors and resistors on the solder side. Do not install R16-R23.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37560901_copy.jpg
+![](Z280assembly1bot.jpeg)
 
 3. Install 1×6 serial port connector, LED, SIP resistors and IC sockets.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37570901_copy.jpg
+![](Z280assembly2top.jpeg)
 
 4. Install super capacitor, 2.1mm x 5.5mm jack, voltage supervisor, clock crystal and reset button. The arrow marking on the super capacitor points at the negative terminal.
 
-www.retrobrewcomputers.org_lib_plugins_ckgedit_fckeditor_userfiles_image_builderpages_plasmo_z280rc_dsc_37590901_copy.jpg
+![](Z280assembly3top.jpeg)
 
 5. Install the 68-pin PLCC socket. The mitred corner of the socket should match the silkscreen.
 
