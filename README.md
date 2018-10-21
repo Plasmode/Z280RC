@@ -43,17 +43,17 @@ Here is a more detailed description of the [CF bootstrap operation](How%20Z280RC
 ![Z280RC Connectors](z280RC_connector_pic.jpeg)
 ## Design Files
 
-Z280RC schematic annotated with engineering changes
+Z280RC [schematic](z280rc_rev0_scm.pdf) annotated with engineering changes
 
-Gerber photoplots. The boards were manufactured by Seeed Studio
+[Gerber photoplots](z280rc_r0_1.zip). The boards were manufactured by Seeed Studio
 
-Bill of Material for Z280RC
+[Bill of Material](z280rc_bom.txt) for Z280RC
 
 [Engineering Changes](Z280RC_rev0_Engineering_Change.md)
 
 [Pictorial assembly guide](Manuals/Z280RC%20assembly%20guide.md)
 
-Altera EPM7128 CPLD design file for 29.4912MHz system clock. Altera EPM7128SQC100 programming file for 29.4912MHz system clock.
+Altera EPM7128 CPLD [design file](z280rc_29_5mhz.zip) for 29.4912MHz system clock. Altera EPM7128SQC100 programming file for 29.4912MHz system clock.
 
 ### Software
 
