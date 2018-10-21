@@ -53,7 +53,7 @@ Z280RC [schematic](z280rc_rev0_scm.pdf) annotated with engineering changes
 
 [Pictorial assembly guide](Manuals/Z280RC%20assembly%20guide.md)
 
-Altera EPM7128 CPLD [design file](z280rc_29_5mhz.zip) for 29.4912MHz system clock. Altera EPM7128SQC100 programming file for 29.4912MHz system clock.
+Altera EPM7128 CPLD [design file](z280rc_29_5mhz.zip) for 29.4912MHz system clock. Altera EPM7128SQC100 [programming file](z280rc_29_5_prog.zip) for 29.4912MHz system clock.
 
 ### Software
 
