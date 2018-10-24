@@ -66,7 +66,7 @@ Altera EPM7128 CPLD [design file](z280rc_29_5mhz.zip) for 29.4912MHz system cloc
 * CP/M3 CPMLDR.COM linked to 0x1100. This is an Intel Hex file to be loaded by ZZMon at location 0x1100 and copy to CF track 0 using the 'C3' command
 * CP/M2.2 DRI distribution image
 * CP/M3 distribution image
-* SC Monitor by Steve Cousins can be downloaded from here. Instruction to customize SC Monitor for Z280RC and load it into CF disk for fast startup.
+* SC Monitor by [Steve Cousins](http://scc.me.uk/) can be downloaded from [here](https://github.com/Plasmode/ZZ80RC/blob/master/SysSoftware/SCMonitor.hex). This is beta release (v0.1.8) of SC Monitor for Z280RC.  Instruction to customize SC Monitor for Z280RC and load it into CF disk for fast startup.
 * DS1302 test software. These are test software to demonstrate the DS1302 RTC is operating properly. bitbangRTC1st should be run first to enable the super capacitor charging circuit and to set the time. bitbangRTC is used to read the RTC afterward. These test software were assembled using zmac
 
 ### Manual
